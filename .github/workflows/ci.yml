@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+# Default to read-only. CI never needs to write to the repo or create
+# releases/tags — only release.yml's publish job needs write access.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: build (${{ matrix.os }})
@@ -24,16 +29,32 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Read pinned Rust toolchain version
+        id: toolchain
+        shell: bash
+        run: |
+          # rust-toolchain.toml is the single source of truth for the
+          # Rust version used everywhere (local dev, CI, release).
+          # Parsed here so both ci.yml and release.yml install the
+          # exact same version without hardcoding it in more than one
+          # place.
+          version=$(grep -m1 '^channel' rust-toolchain.toml | sed -E 's/channel = "(.*)"/\1/')
+          if [ -z "$version" ]; then
+            echo "error: could not read [toolchain] channel from rust-toolchain.toml" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
-          toolchain: 1.85.0
+          toolchain: ${{ steps.toolchain.outputs.version }}
           components: rustfmt, clippy
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
 
       - name: Format
         run: cargo fmt -- --check
