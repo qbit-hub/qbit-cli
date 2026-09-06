@@ -135,6 +135,21 @@ fn parse_version(input: &str) -> Result<Version> {
     Version::parse(normalized).with_context(|| format!("invalid semantic version: `{trimmed}`"))
 }
 
+/// Product decision: `qbit upgrade` only ever installs stable
+/// releases. There is no `--prerelease` flag and none is planned —
+/// this is a deliberate scope decision, not an oversight or a
+/// half-implemented feature.
+///
+/// This is enforced by using GitHub's `/releases/latest` endpoint,
+/// which per GitHub's own API contract returns only the most recent
+/// release that is NOT marked as a draft and NOT marked as a
+/// prerelease. Draft releases are never visible to unauthenticated
+/// API consumers at all, and prereleases are structurally excluded by
+/// this endpoint regardless of how recent they are. If GitHub's most
+/// recent tag is a prerelease, `/releases/latest` skips it and
+/// returns the most recent *stable* release instead — exactly the
+/// desired behavior, achieved without needing to inspect a
+/// `prerelease` or `draft` field ourselves.
 fn github_api_url(repository: &str) -> String {
     format!("https://api.github.com/repos/{repository}/releases/latest")
 }
@@ -400,6 +415,26 @@ fn is_permission_denied(output: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn upgrade_uses_releases_latest_endpoint_not_all_releases() {
+        // Product decision (item 12): qbit upgrade is stable-only, no
+        // --prerelease flag. This is enforced by using GitHub's
+        // /releases/latest endpoint specifically, which excludes
+        // drafts and prereleases by GitHub's own API contract. Using
+        // the plain /releases endpoint instead would include
+        // prereleases and would silently break this guarantee, so
+        // this test locks in the exact URL shape.
+        let url = github_api_url("qbit-click/qbit-cli");
+        assert_eq!(
+            url,
+            "https://api.github.com/repos/qbit-click/qbit-cli/releases/latest"
+        );
+        assert!(
+            url.ends_with("/releases/latest"),
+            "must use /releases/latest, not /releases, to exclude prereleases and drafts"
+        );
+    }
 
     #[test]
     fn parse_version_accepts_v_prefix() {

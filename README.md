@@ -113,6 +113,8 @@ qbit upgrade
 ```
 Reads the latest official GitHub release, downloads the correct installer for your OS/architecture, verifies its SHA-256 checksum, and installs it using your OS's native installer (`dpkg`, `installer`, or `msiexec`). If elevated privileges are required, you'll be prompted automatically.
 
+**Stable releases only.** `qbit upgrade` never installs a prerelease or draft release, and there is no flag to opt into one — this is a deliberate scope decision, not a missing feature. If you need a prerelease build, download and install it manually from the [Releases page](https://github.com/qbit-click/qbit-cli/releases).
+
 ### Automatic update checks
 
 `qbit` checks for a newer version at most once every 24 hours, before running your command. The check:
@@ -122,7 +124,7 @@ Reads the latest official GitHub release, downloads the correct installer for yo
 
 Disable the automatic check with:
 ```bash
-CHECK_UPDATE_DISABLE_QBIT=1 qbit <command>
+QBIT_DISABLE_UPDATE_CHECK=1 qbit <command>
 ```
 This only disables the automatic background check — running `qbit upgrade` yourself always works regardless of this setting.
 
