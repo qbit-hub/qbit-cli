@@ -52,8 +52,7 @@ pub fn detect_package_manager() -> Result<Box<dyn PackageManager>> {
 
         let pm = package_manager_from_name(override_name).ok_or_else(|| {
             anyhow::anyhow!(
-                "Unknown package manager `{}` in QBIT_PACKAGE_MANAGER. Supported values: apt-get, dnf, pacman, zypper, brew, winget, choco, scoop.",
-                override_name
+                "Unknown package manager `{override_name}` in QBIT_PACKAGE_MANAGER. Supported values: apt-get, dnf, pacman, zypper, brew, winget, choco, scoop."
             )
         })?;
 

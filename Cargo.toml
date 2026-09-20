@@ -24,6 +24,11 @@ tempfile = "3.15.0"
 serial_test = "3.2.0"
 proptest = "1.6.0"
 insta = "1.42.2"
+# Used only by tests/cli_upgrade.rs to run a local mock HTTP server so
+# that upgrade-flow tests exercise the real HTTP-calling code in
+# src/os/upgrade.rs without depending on the real GitHub API.
+wiremock = "0.6"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 [[bin]]
 name = "qbit"

@@ -18,11 +18,11 @@ OUT_DIR="${4:-dist}"
 
 # --- Requirement 5.3: architecture allowlist ---
 case "$ARCH" in
-  amd64|arm64) ;;
-  *)
-    echo "error: invalid architecture '$ARCH'. Allowed: amd64, arm64" >&2
-    exit 1
-    ;;
+amd64 | arm64) ;;
+*)
+  echo "error: invalid architecture '$ARCH'. Allowed: amd64, arm64" >&2
+  exit 1
+  ;;
 esac
 
 # --- Requirement 5.4: Debian version format validation ---
@@ -75,9 +75,52 @@ sed \
   -e "s/__VERSION__/$VERSION/" \
   -e "s/__ARCH__/$ARCH/" \
   -e "s/__MAINTAINER__/$QBIT_MAINTAINER/" \
-  "$CONTROL_TEMPLATE" \
-  | tr -d '\r' \
-  | sed '/^[[:space:]]*$/d' > "$PKG_ROOT/DEBIAN/control"
+  "$CONTROL_TEMPLATE" |
+  tr -d '\r' |
+  sed '/^[[:space:]]*$/d' >"$PKG_ROOT/DEBIAN/control"
+
+# --- Item 20: compute the real runtime Depends: field ---
+# The qbit binary is dynamically linked (confirmed via `ldd`: it links
+# libc.so.6, libm.so.6, libgcc_s.so.1). Rather than hand-writing a
+# glibc version bound — which would be tied to whatever machine ran
+# `ldd` and could be wrong for the actual CI-built artifact — use
+# dpkg-shlibdeps, the standard Debian tool that inspects the actual
+# binary being packaged and computes the correct minimum versioned
+# dependency automatically, on whichever machine is doing the real
+# packaging (the CI runner, in practice).
+if command -v dpkg-shlibdeps >/dev/null 2>&1; then
+  # dpkg-shlibdeps expects Debian SOURCE package conventions: a
+  # lowercase debian/control file relative to the current directory
+  # (NOT our DEBIAN/control, which is the binary-package convention
+  # dpkg-deb itself uses — these are two different, unrelated
+  # directory naming conventions in the Debian tooling ecosystem).
+  # We only need this file to exist for dpkg-shlibdeps to run; its
+  # content is irrelevant to the computed Depends: value, since that
+  # comes purely from inspecting the binary's actual dynamic linkage.
+  mkdir -p "$PKG_ROOT/debian"
+  printf 'Source: qbit-cli\n\nPackage: qbit-cli\nArchitecture: %s\n' "$ARCH" >"$PKG_ROOT/debian/control"
+
+  (
+    cd "$PKG_ROOT"
+    dpkg-shlibdeps --ignore-missing-info -O usr/bin/qbit >"$STAGE_DIR/substvars" 2>/dev/null || true
+  )
+  rm -rf "$PKG_ROOT/debian" # never ship this placeholder in the actual .deb payload
+
+  if [ -s "$STAGE_DIR/substvars" ]; then
+    computed_depends=$(grep '^shlibs:Depends=' "$STAGE_DIR/substvars" | cut -d= -f2-)
+    if [ -n "$computed_depends" ]; then
+      echo "Depends: $computed_depends" >>"$PKG_ROOT/DEBIAN/control"
+      echo "Computed runtime dependency: $computed_depends"
+    else
+      echo "WARNING: dpkg-shlibdeps ran but produced no shlibs:Depends value — package will have no Depends: field." >&2
+    fi
+  else
+    echo "WARNING: dpkg-shlibdeps produced no output — package will have no Depends: field." >&2
+  fi
+else
+  echo "WARNING: dpkg-shlibdeps not found — package will be built WITHOUT a computed Depends: field." >&2
+  echo "This is acceptable for local/manual builds but should not happen in CI; install dpkg-dev." >&2
+fi
 
 # --- Requirement 5.5: no placeholder may survive rendering ---
 if grep -qE "__VERSION__|__ARCH__|__MAINTAINER__" "$PKG_ROOT/DEBIAN/control"; then

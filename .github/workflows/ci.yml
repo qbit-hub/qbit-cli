@@ -99,12 +99,28 @@ jobs:
         run: |
           set -euo pipefail
           pkg=$(find dist -maxdepth 1 -name "*.deb" | head -n1)
-          sudo dpkg -i "$pkg"
-          out="$(qbit --help)"
-          echo "qbit --help -> $out"
-          sudo dpkg -r qbit-cli
+
+          if ! sudo dpkg -i "$pkg"; then
+            echo "error: dpkg -i failed (exit code $?)" >&2
+            exit 1
+          fi
+
+          help_out="$(qbit --help)"
+          echo "qbit --help -> $help_out"
+          version_out="$(qbit --version)"
+          echo "qbit --version -> $version_out"
+
+          if ! sudo dpkg -r qbit-cli; then
+            echo "error: dpkg -r failed (exit code $?)" >&2
+            exit 1
+          fi
+
           if command -v qbit >/dev/null 2>&1; then
-            echo "error: qbit still on PATH after uninstall" >&2
+            echo "error: qbit still resolvable on PATH after uninstall" >&2
+            exit 1
+          fi
+          if [ -e /usr/bin/qbit ]; then
+            echo "error: /usr/bin/qbit still exists on disk after uninstall" >&2
             exit 1
           fi
 
@@ -122,11 +138,36 @@ jobs:
         run: |
           set -euo pipefail
           pkg=$(find dist -maxdepth 1 -name "*.pkg" | head -n1)
-          sudo installer -pkg "$pkg" -target /
-          out="$(/usr/local/bin/qbit --help)"
-          echo "qbit --help -> $out"
+
+          if ! sudo installer -pkg "$pkg" -target /; then
+            echo "error: installer failed (exit code $?)" >&2
+            exit 1
+          fi
+
+          # Must resolve via PATH, not an absolute path — this is the
+          # actual experience a user gets after installing and
+          # opening a new terminal, and /usr/local/bin is expected to
+          # already be on PATH by default on macOS.
+          help_out="$(qbit --help)"
+          echo "qbit --help -> $help_out"
+          version_out="$(qbit --version)"
+          echo "qbit --version -> $version_out"
+
           sudo pkgutil --forget com.qbit-click.qbit-cli
           sudo rm -f /usr/local/bin/qbit
+
+          if command -v qbit >/dev/null 2>&1; then
+            echo "error: qbit still resolvable on PATH after uninstall" >&2
+            exit 1
+          fi
+          if [ -e /usr/local/bin/qbit ]; then
+            echo "error: /usr/local/bin/qbit still exists on disk after uninstall" >&2
+            exit 1
+          fi
+          if pkgutil --pkg-info com.qbit-click.qbit-cli >/dev/null 2>&1; then
+            echo "error: package receipt com.qbit-click.qbit-cli still registered after pkgutil --forget" >&2
+            exit 1
+          fi
 
       - name: Build test .msi (Windows)
         if: matrix.os == 'windows-latest'
@@ -140,9 +181,44 @@ jobs:
         shell: pwsh
         run: |
           $msi = Get-ChildItem dist\*.msi | Select-Object -First 1
-          Start-Process msiexec.exe -ArgumentList "/i `"$($msi.FullName)`" /qn" -Wait
+
+          $installProcess = Start-Process msiexec.exe -ArgumentList "/i `"$($msi.FullName)`" /qn" -Wait -PassThru
+          if ($installProcess.ExitCode -ne 0) {
+              Write-Error "msiexec install failed with exit code $($installProcess.ExitCode)"
+              exit 1
+          }
+
           # Refresh PATH for this process from the machine+user environment
           $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
-          $out = & qbit --help
-          Write-Host "qbit --help -> $out"
-          Start-Process msiexec.exe -ArgumentList "/x `"$($msi.FullName)`" /qn" -Wait
+
+          $helpOut = & qbit --help
+          Write-Host "qbit --help -> $helpOut"
+          $versionOut = & qbit --version
+          Write-Host "qbit --version -> $versionOut"
+
+          $qbitPath = (Get-Command qbit -ErrorAction SilentlyContinue).Source
+
+          $uninstallProcess = Start-Process msiexec.exe -ArgumentList "/x `"$($msi.FullName)`" /qn" -Wait -PassThru
+          if ($uninstallProcess.ExitCode -ne 0) {
+              Write-Error "msiexec uninstall failed with exit code $($uninstallProcess.ExitCode)"
+              exit 1
+          }
+
+          # Refresh PATH again post-uninstall to reflect the removed entry
+          $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+
+          if (Get-Command qbit -ErrorAction SilentlyContinue) {
+              Write-Error "qbit is still resolvable on PATH after uninstall"
+              exit 1
+          }
+          if ($qbitPath -and (Test-Path -LiteralPath $qbitPath)) {
+              Write-Error "qbit.exe still exists on disk at $qbitPath after uninstall"
+              exit 1
+          }
+
+          $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+          $binDir = Split-Path -Parent $qbitPath
+          if ($userPath -and $binDir -and ($userPath -split ";" | Where-Object { $_.TrimEnd("\") -ieq $binDir.TrimEnd("\") })) {
+              Write-Error "User PATH still contains t
+              exit 1
+          }

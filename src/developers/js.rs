@@ -215,8 +215,7 @@ where
     if let Some(raw) = env_override {
         let pm = JsPackageManager::parse(raw).ok_or_else(|| {
             anyhow::anyhow!(
-                "Unsupported QBIT_JS_PM value `{}`. Supported values: bun, pnpm, yarn, npm.",
-                raw
+                "Unsupported QBIT_JS_PM value `{raw}`. Supported values: bun, pnpm, yarn, npm."
             )
         })?;
         if !is_available(pm) {

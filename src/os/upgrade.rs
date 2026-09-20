@@ -14,6 +14,13 @@ use crate::os::update::platform::{self, Platform};
 
 const DEFAULT_REPOSITORY: &str = "qbit-click/qbit-cli";
 
+/// GitHub API base URL. Overridable via `QBIT_UPGRADE_API_BASE_URL`
+/// so integration tests (tests/cli_upgrade.rs) can point this at a
+/// local mock HTTP server instead of the real GitHub API — this way
+/// tests exercise the actual, real HTTP-calling code in this file
+/// end-to-end, with no test depending on real network access.
+const DEFAULT_API_BASE_URL: &str = "https://api.github.com";
+
 /// Manual `qbit upgrade` gets longer, bounded timeouts than the
 /// automatic background check (which uses a short 3s timeout so it
 /// never noticeably delays normal command startup). A manual upgrade
@@ -151,7 +158,16 @@ fn parse_version(input: &str) -> Result<Version> {
 /// desired behavior, achieved without needing to inspect a
 /// `prerelease` or `draft` field ourselves.
 fn github_api_url(repository: &str) -> String {
-    format!("https://api.github.com/repos/{repository}/releases/latest")
+    let base = api_base_url();
+    format!("{base}/repos/{repository}/releases/latest")
+}
+
+fn api_base_url() -> String {
+    std::env::var("QBIT_UPGRADE_API_BASE_URL")
+        .ok()
+        .map(|v| v.trim().trim_end_matches('/').to_string())
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| DEFAULT_API_BASE_URL.to_string())
 }
 
 fn fetch_latest_release(repository: &str) -> Result<GithubRelease> {
@@ -416,7 +432,10 @@ fn is_permission_denied(output: &str) -> bool {
 mod tests {
     use super::*;
 
+    use serial_test::serial;
+
     #[test]
+    #[serial]
     fn upgrade_uses_releases_latest_endpoint_not_all_releases() {
         // Product decision (item 12): qbit upgrade is stable-only, no
         // --prerelease flag. This is enforced by using GitHub's
@@ -425,6 +444,12 @@ mod tests {
         // the plain /releases endpoint instead would include
         // prereleases and would silently break this guarantee, so
         // this test locks in the exact URL shape.
+        //
+        // Explicitly unset the override so this test is not affected
+        // by another test (or a real environment) that has set it.
+        unsafe {
+            std::env::remove_var("QBIT_UPGRADE_API_BASE_URL");
+        }
         let url = github_api_url("qbit-click/qbit-cli");
         assert_eq!(
             url,
@@ -433,6 +458,22 @@ mod tests {
         assert!(
             url.ends_with("/releases/latest"),
             "must use /releases/latest, not /releases, to exclude prereleases and drafts"
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn github_api_url_honors_base_url_override() {
+        unsafe {
+            std::env::set_var("QBIT_UPGRADE_API_BASE_URL", "http://127.0.0.1:9999");
+        }
+        let url = github_api_url("qbit-click/qbit-cli");
+        unsafe {
+            std::env::remove_var("QBIT_UPGRADE_API_BASE_URL");
+        }
+        assert_eq!(
+            url,
+            "http://127.0.0.1:9999/repos/qbit-click/qbit-cli/releases/latest"
         );
     }
 
