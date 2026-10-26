@@ -1,0 +1,8 @@
+Package: qbit-cli
+Version: __VERSION__
+Architecture: __ARCH__
+Section: utils
+Priority: optional
+Maintainer: __MAINTAINER__
+Description: Qbit CLI
+ Command-line tool for Qbit workflows.

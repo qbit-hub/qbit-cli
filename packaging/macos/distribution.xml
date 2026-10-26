@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Qbit CLI</title>
+    <organization>com.qbit-click</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="false" rootVolumeOnly="true"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.qbit-click.qbit-cli.pkg"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.qbit-click.qbit-cli.pkg" visible="false">
+        <pkg-ref id="com.qbit-click.qbit-cli.pkg"/>
+    </choice>
+    <!--
+      Requirement 4.1: this must remain a placeholder, never a
+      hardcoded version like "0.1.3". build-macos.sh substitutes the
+      real version at build time and verifies no placeholder survives
+      the render step.
+    -->
+    <pkg-ref id="com.qbit-click.qbit-cli.pkg" version="__VERSION__" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>

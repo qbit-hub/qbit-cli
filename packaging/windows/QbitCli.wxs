@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <!--
+    IMPORTANT: This UpgradeCode must NEVER change again from this
+    point forward. It is what lets a newer MSI detect and cleanly
+    replace an older install instead of installing side-by-side.
+    This value (2f08e9ad-31e0-4fe7-bc10-967c0aeedf04) is final —
+    generated once and locked in. Do not regenerate it.
+  -->
+  <Package
+      Name="Qbit CLI"
+      Manufacturer="Qbit"
+      Version="$(var.ProductVersion)"
+      UpgradeCode="2f08e9ad-31e0-4fe7-bc10-967c0aeedf04"
+      Language="1033"
+      Scope="perUser">
+
+    <MajorUpgrade
+        DowngradeErrorMessage="A newer version of Qbit CLI is already installed. Uninstall it first if you need to downgrade."
+        Schedule="afterInstallInitialize" />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!--
+      Per-user install path: %LOCALAPPDATA%\Programs\Qbit CLI\bin\qbit.exe
+      matching the documented installation convention exactly.
+    -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Qbit CLI">
+          <Directory Id="BINFOLDER" Name="bin" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="Qbit CLI" Level="1">
+      <ComponentRef Id="QbitExecutable" />
+      <ComponentRef Id="PathEntry" />
+    </Feature>
+
+    <!-- The actual binary. Only qbit.exe — no qbit-cli.exe alias. -->
+    <Component Id="QbitExecutable" Directory="BINFOLDER" Guid="*">
+      <File Id="QbitExe" Source="$(var.QbitBinaryPath)" Name="qbit.exe" KeyPath="yes" />
+    </Component>
+
+    <!-- Add bin dir to the user's PATH, once, without duplicating -->
+    <Component Id="PathEntry" Directory="BINFOLDER" Guid="*">
+      <RegistryValue
+          Root="HKCU"
+          Key="Software\QbitCli"
+          Name="Installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      <Environment
+          Id="PATH"
+          Name="PATH"
+          Value="[BINFOLDER]"
+          Permanent="no"
+          Part="last"
+          Action="set"
+          System="no" />
+    </Component>
+
+    <Icon Id="QbitIcon.ico" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="QbitIcon.ico" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+  </Package>
+</Wix>
