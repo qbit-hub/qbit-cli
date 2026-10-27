@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "project": "qbit",
+  "repository": "qbit-cli",
+  "context": {
+    "remote": "https://github.com/qbit-hub/qbit-ai-context.git",
+    "branch": "main",
+    "cachePath": ".ai/context/cache/project-context"
+  },
+  "behavior": {
+    "ensureOnStart": true,
+    "refreshOnStart": true,
+    "loadOnStart": true,
+    "checkpointAfterValidation": true,
+    "checkpointBeforeHandoff": true,
+    "commitContext": true,
+    "pushContext": true
+  }
+}
