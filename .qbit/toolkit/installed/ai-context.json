@@ -7,7 +7,7 @@
     "repositoryId":  "qbit-cli",
     "contextRemote":  "https://github.com/qbit-hub/qbit-ai-context.git",
     "contextBranch":  "main",
-    "installedAtUtc":  "2026-10-27T15:27:40Z",
+    "installedAtUtc":  "2026-10-27T19:01:56Z",
     "managedFiles":  [
                          {
                              "path":  ".ai/context/.gitignore",
@@ -19,7 +19,7 @@
                          },
                          {
                              "path":  ".ai/context/context-sync-gate.ps1",
-                             "sha256":  "0da0d32ee61dd9f1a21e6c5a300643d2ce4afb20309cd2fc7c4791e55377c6d6"
+                             "sha256":  "6542d23b8d738cfd574e02ea294887cb6b39da2f9ab11e31ac5f5b2d598c2626"
                          },
                          {
                              "path":  ".ai/context/context-transfer.ps1",
