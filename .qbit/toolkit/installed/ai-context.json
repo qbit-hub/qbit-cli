@@ -1,0 +1,72 @@
+{
+    "schemaVersion":  "1.0",
+    "installerId":  "installer.ai-context",
+    "installerVersion":  "1.2.9",
+    "mode":  "member",
+    "projectId":  "qbit",
+    "repositoryId":  "qbit-cli",
+    "contextRemote":  "https://github.com/qbit-hub/qbit-ai-context.git",
+    "contextBranch":  "main",
+    "installedAtUtc":  "2026-10-27T19:01:56Z",
+    "managedFiles":  [
+                         {
+                             "path":  ".ai/context/.gitignore",
+                             "sha256":  "9888165fee62b78bdff8db68bba4024907d933be72e7a8ce936fe19ca01e44de"
+                         },
+                         {
+                             "path":  ".ai/context/config.json",
+                             "sha256":  "81f332c624fc38f0bbd19b3ef177adf5b6f36db1f7e0c2f2956aca1c7a5c821b"
+                         },
+                         {
+                             "path":  ".ai/context/context-sync-gate.ps1",
+                             "sha256":  "6542d23b8d738cfd574e02ea294887cb6b39da2f9ab11e31ac5f5b2d598c2626"
+                         },
+                         {
+                             "path":  ".ai/context/context-transfer.ps1",
+                             "sha256":  "36c4a1646ba5d2547af825bab7fea9076a20ad921b51cc648a3f743058c178f3"
+                         },
+                         {
+                             "path":  ".ai/context/context.ps1",
+                             "sha256":  "567a3b106ba8a5b4c0dc210fbee3fd916b1af032f6202db749c6de9b3f8907fd"
+                         },
+                         {
+                             "path":  ".ai/context/context.py",
+                             "sha256":  "ad48c5105f738827c9a106183195076e4065b170bdeb19af75f99cc714d411e2"
+                         },
+                         {
+                             "path":  ".ai/context/context.sh",
+                             "sha256":  "6138e0013de4d2c538240348891507a4927bcdbaf71b7da04116ca9a344b9e67"
+                         }
+                     ],
+    "managedBlocks":  [
+                          {
+                              "path":  ".ai-bridge/.gitignore",
+                              "begin":  "# qbit-toolkit:ai-context:start",
+                              "end":  "# qbit-toolkit:ai-context:end",
+                              "sha256":  "88b8a85e35c180a33350dd8a1a4b91bee773a5ffc98f983c69b3d849d8d90907"
+                          },
+                          {
+                              "path":  ".gitignore",
+                              "begin":  "# qbit-toolkit:ai-context:start",
+                              "end":  "# qbit-toolkit:ai-context:end",
+                              "sha256":  "0aefa34987d32f6f3c99e6c7427a8a201be0ffd3e4ca85ff00937600c8694552"
+                          },
+                          {
+                              "path":  "AGENTS.md",
+                              "begin":  "\u003c!-- qbit-toolkit:ai-context:start --\u003e",
+                              "end":  "\u003c!-- qbit-toolkit:ai-context:end --\u003e",
+                              "sha256":  "4f111d1b93c6f808a0591e41d0c7784f385566fb500ee25cf92366fcbb3b910d"
+                          },
+                          {
+                              "path":  "AI_CONTEXT.md",
+                              "begin":  "\u003c!-- qbit-toolkit:ai-context:start --\u003e",
+                              "end":  "\u003c!-- qbit-toolkit:ai-context:end --\u003e",
+                              "sha256":  "177c9205215c8d20dcee0184be888ccf4d005bfc00950383b8515e00cf61b14e"
+                          }
+                      ],
+    "seededFiles":  [
+                        ".ai-bridge/README.md",
+                        "AI_CONTEXT.md"
+                    ],
+    "stateFile":  ".qbit/toolkit/installed/ai-context.json"
+}

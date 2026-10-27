@@ -10,3 +10,8 @@
 /user-docs/playwright-report/
 /user-docs/test-results/
 /user-docs/coverage/
+
+# qbit-toolkit:ai-context:start
+.qbit-toolkit/ai-context/backups/
+.qbit-toolkit/ai-context/transactions/
+# qbit-toolkit:ai-context:end
